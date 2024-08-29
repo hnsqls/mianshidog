@@ -3,9 +3,11 @@ package com.ls.mianshidog.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ls.mianshidog.common.BaseResponse;
 import com.ls.mianshidog.model.dto.question.QuestionQueryRequest;
 import com.ls.mianshidog.model.entity.Question;
 import com.ls.mianshidog.model.vo.QuestionVO;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -48,4 +50,12 @@ public interface QuestionService extends IService<Question> {
      * @return
      */
     Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request);
+
+    /**
+     * 分页获取题目列表（仅管理员可用）
+     *
+     * @param questionQueryRequest
+     * @return
+     */
+     Page<Question> listQuestionByPage(QuestionQueryRequest questionQueryRequest);
 }
