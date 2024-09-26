@@ -19,6 +19,7 @@ import com.ls.mianshidog.model.entity.QuestionBank;
 import com.ls.mianshidog.model.entity.QuestionBankQuestion;
 import com.ls.mianshidog.model.entity.User;
 import com.ls.mianshidog.model.vo.QuestionBankVO;
+import com.ls.mianshidog.model.vo.QuestionVO;
 import com.ls.mianshidog.service.QuestionBankService;
 import com.ls.mianshidog.service.QuestionService;
 import com.ls.mianshidog.service.UserService;
@@ -156,7 +157,12 @@ public class QuestionBankController {
         if (needQueryQuestionList) {
             QuestionQueryRequest questionQueryRequest = new QuestionQueryRequest();
             questionQueryRequest.setQuestionBankId(id);
+            //可以按需要支持更多的题目搜索参数比如分页
+            questionQueryRequest.setPageSize(questionBankQueryRequest.getPageSize());
+            questionQueryRequest.setCurrent(questionBankQueryRequest.getCurrent());
+
             Page<Question> questionPage = questionService.listQuestionByPage(questionQueryRequest);
+            Page<QuestionVO> questionVOPage = questionService.getQuestionVOPage(questionPage, request);
             questionBankVO.setQuestionPage(questionPage);
         }
         // 获取封装类
@@ -193,7 +199,7 @@ public class QuestionBankController {
         long current = questionBankQueryRequest.getCurrent();
         long size = questionBankQueryRequest.getPageSize();
         // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(size > 200, ErrorCode.PARAMS_ERROR);
         // 查询数据库
         Page<QuestionBank> questionBankPage = questionBankService.page(new Page<>(current, size),
                 questionBankService.getQueryWrapper(questionBankQueryRequest));
