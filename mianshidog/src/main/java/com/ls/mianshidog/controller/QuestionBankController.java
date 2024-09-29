@@ -163,7 +163,7 @@ public class QuestionBankController {
 
             Page<Question> questionPage = questionService.listQuestionByPage(questionQueryRequest);
             Page<QuestionVO> questionVOPage = questionService.getQuestionVOPage(questionPage, request);
-            questionBankVO.setQuestionPage(questionPage);
+            questionBankVO.setQuestionPage(questionVOPage);
         }
         // 获取封装类
         return ResultUtils.success(questionBankVO);

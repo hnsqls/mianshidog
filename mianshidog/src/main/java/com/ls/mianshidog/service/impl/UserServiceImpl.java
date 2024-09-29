@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ls.mianshidog.common.ErrorCode;
+import com.ls.mianshidog.constant.RedisConstant;
 import com.ls.mianshidog.constant.UserConstant;
 import com.ls.mianshidog.exception.BusinessException;
 import com.ls.mianshidog.model.dto.user.UserQueryRequest;
@@ -16,13 +17,17 @@ import com.ls.mianshidog.utils.SqlUtils;
 import com.ls.mianshidog.constant.CommonConstant;
 import com.ls.mianshidog.mapper.UserMapper;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.Year;
+import java.util.*;
 import java.util.stream.Collectors;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RBitSet;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -34,6 +39,10 @@ import org.springframework.util.DigestUtils;
 @Service
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    @Resource
+    private  RedissonClient redissonClient;
+
 
     /**
      * 盐值，混淆密码
@@ -267,4 +276,81 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 sortField);
         return queryWrapper;
     }
+
+
+
+    /**
+     * 添加用户签到记录
+     *
+     * @param userId 用户签到
+     * @return 当前是否已签到成功
+     */
+    public boolean addUserSignIn(long userId) {
+        // 当前日期
+        LocalDate localDate = LocalDate.now();
+        int year = localDate.getYear();
+        String key = RedisConstant.getUserSignInRedisKey(year, userId);
+
+        //获取bitmap 数据
+        RBitSet bitSet = redissonClient.getBitSet(key);
+        //一年的偏移量  从一开始
+        int dayOfYear = localDate.getDayOfYear();
+        //是否已经签到
+        if (!bitSet.get(dayOfYear)){
+            //没有签到
+            bitSet.set(dayOfYear,true);
+        }
+        //已经签到
+        return  true;
+
+    }
+
+    /**
+     * 获取签到记录
+     * @param year
+     * @param userid
+     * @return  一整年签到记录的集合  [[2024-09-28:true],[2024-09-29:false],[2024-09-30:false]]
+     */
+    @Override
+    public List<Integer> getUserSignIn(Integer year, long userid) {
+        //不传年份，默认当年
+
+        if (year == null){
+            LocalDate now = LocalDate.now();
+            year = now.getYear();
+        }
+        //获取signInkey
+        String userSignInRedisKey = RedisConstant.getUserSignInRedisKey(year, userid);
+        //获取bitmap数据
+        RBitSet signbitSet = redissonClient.getBitSet(userSignInRedisKey);
+
+        //缓存bitmap数据
+        BitSet bitSet = signbitSet.asBitSet();
+
+        // 构造返回结果 linkedHashMap保证有序
+        ArrayList<Integer> result = new ArrayList<>();
+
+        //获取当前年总天数
+        int totalDays = Year.of(year).length();
+
+        //依次获取每一天的签到状态
+//        for (int dayOfYear = 1; dayOfYear <= totalDays; dayOfYear++) {
+//            // 获取key ： 当前日期
+//           LocalDate currentDate = LocalDate.ofYearDay(year, dayOfYear);
+//            // 获取 value ： 当前是否有刷题
+//            boolean hasRecord = bitSet.get(dayOfYear);
+//            if (hasRecord){
+//                result.add(dayOfYear);
+//            }
+//        }
+
+        //依次获取每一天的签到状态 优化版
+        int i = bitSet.nextSetBit(0);
+        while (i >= 0){
+            result.add(i);
+           i =  bitSet.nextSetBit(i+1);
+        }
+        return result;
+    }
+
 }

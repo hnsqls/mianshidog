@@ -7,7 +7,9 @@ import com.ls.mianshidog.model.entity.User;
 import com.ls.mianshidog.model.vo.LoginUserVO;
 import com.ls.mianshidog.model.vo.UserVO;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 
@@ -116,5 +118,23 @@ public interface UserService extends IService<User> {
      * @return
      */
     QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
+
+
+    /**
+     * 添加用户签到记录
+     *
+     * @param userId 用户 id
+     * @return 当前是否已签到成功
+     */
+    boolean addUserSignIn(long userId);
+
+
+    /**
+     * 获取签到记录
+     * @param year
+     * @param userid
+     * @return  一整年签到记录的集合  [[2024-09-28:true],[2024-09-29:false],[2024-09-30:false]]
+     */
+    List<Integer> getUserSignIn(Integer year,long userid);
 
 }
