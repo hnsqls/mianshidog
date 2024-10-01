@@ -3,13 +3,13 @@ package com.ls.mianshidog.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.ls.mianshidog.common.BaseResponse;
 import com.ls.mianshidog.model.dto.question.QuestionQueryRequest;
 import com.ls.mianshidog.model.entity.Question;
+import com.ls.mianshidog.model.entity.User;
 import com.ls.mianshidog.model.vo.QuestionVO;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * 题目服务
@@ -67,5 +67,14 @@ public interface QuestionService extends IService<Question> {
      * @return
      */
     Page<Question> searchFromEs(QuestionQueryRequest questionQueryRequest);
+
+
+    /**
+     * 批量删除题目
+     * 删除题目的同时删除题目题库关系
+     * @param questionIds
+     * @param user
+     */
+    void removeBatchQuestionAndQuestionBankQuestionByIds(List<Long> questionIds, User user);
 
 }

@@ -10,10 +10,7 @@ import com.ls.mianshidog.common.ResultUtils;
 import com.ls.mianshidog.constant.UserConstant;
 import com.ls.mianshidog.exception.BusinessException;
 import com.ls.mianshidog.exception.ThrowUtils;
-import com.ls.mianshidog.model.dto.question.QuestionAddRequest;
-import com.ls.mianshidog.model.dto.question.QuestionEditRequest;
-import com.ls.mianshidog.model.dto.question.QuestionQueryRequest;
-import com.ls.mianshidog.model.dto.question.QuestionUpdateRequest;
+import com.ls.mianshidog.model.dto.question.*;
 import com.ls.mianshidog.model.entity.Question;
 import com.ls.mianshidog.model.entity.User;
 import com.ls.mianshidog.model.vo.QuestionVO;
@@ -264,5 +261,28 @@ public class QuestionController {
         Page<Question> questionPage = questionService.searchFromEs(questionQueryRequest);
         return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
     }
+
+
+    /**
+     *   批量删除题目
+     *   删除题目的同时删除题目题库关系
+     * @param questionRemoveBatchRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/delete/batch")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> batchDeleteQuestions(@RequestBody QuestionRemoveBatchRequest questionRemoveBatchRequest,
+                                                      HttpServletRequest request) {
+        ThrowUtils.throwIf(questionRemoveBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+
+        questionService.removeBatchQuestionAndQuestionBankQuestionByIds(questionRemoveBatchRequest.getQuestionIdList(),loginUser);
+
+        return ResultUtils.success(true);
+    }
+
 
 }
