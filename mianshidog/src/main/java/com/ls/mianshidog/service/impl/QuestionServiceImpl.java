@@ -12,6 +12,7 @@ import com.ls.mianshidog.common.ErrorCode;
 import com.ls.mianshidog.common.ResultUtils;
 import com.ls.mianshidog.constant.CommonConstant;
 import com.ls.mianshidog.constant.UserConstant;
+import com.ls.mianshidog.exception.BusinessException;
 import com.ls.mianshidog.exception.ThrowUtils;
 import com.ls.mianshidog.mapper.QuestionMapper;
 import com.ls.mianshidog.model.dto.question.QuestionEsDTO;
@@ -41,6 +42,7 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -321,6 +323,51 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         }
         page.setRecords(resourceList);
         return page;
+    }
+
+
+    /**
+     * 通过题目id集合批量移除到题库关系
+     * @param questionIds
+     * @param user
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeBatchQuestionAndQuestionBankQuestionByIds(List<Long> questionIds, User user) {
+        // 逻辑参数校验
+        ThrowUtils.throwIf(questionIds == null, ErrorCode.NOT_FOUND_ERROR, "题目id集合不能为空");
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR, "用户不能为空");
+
+        // 业务参数校验
+        List<Question> questionList = this.listByIds(questionIds);
+        List<Long> questionIdList = questionList.stream()
+                .map(Question::getId)
+                .collect(Collectors.toList());
+
+       ThrowUtils.throwIf( questionIdList.isEmpty(),ErrorCode.NOT_FOUND_ERROR, "题目不存在");
+
+       //批量删除题目以及题库关系
+        for (Long questionId : questionIdList) {
+            //移除题目
+            boolean result = this.removeById(questionId);
+
+            if (!result){
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "删除题目失败");
+            }
+
+            //移除题库关系
+            //先看看题目有没有题目题库关系
+            LambdaQueryWrapper<QuestionBankQuestion> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(QuestionBankQuestion::getQuestionId, questionId);
+            QuestionBankQuestion questionBankQuestionOne = questionBankQuestionService.getOne(queryWrapper);
+
+            if (questionBankQuestionOne != null) {
+                boolean remove = questionBankQuestionService.remove(queryWrapper);
+                if (!remove){
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR, "删除题目题库关系失败");
+                }
+            }
+        }
     }
 
 
