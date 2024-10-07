@@ -2,6 +2,7 @@ package com.ls.mianshidog.controller;
 
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.jd.platform.hotkey.client.callback.JdHotKeyStore;
 import com.ls.mianshidog.annotation.AuthCheck;
 import com.ls.mianshidog.common.BaseResponse;
 import com.ls.mianshidog.common.DeleteRequest;
@@ -145,9 +146,25 @@ public class QuestionController {
     @GetMapping("/get/vo")
     public BaseResponse<QuestionVO> getQuestionVOById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+
+        // 生成key
+        String key = "question_detail_" +id;
+        // 判断是否热key
+        if (JdHotKeyStore.isHotKey(key)){
+            // 是热key,查缓存
+            Object cacheQuestionVO = JdHotKeyStore.get(key);
+            if (cacheQuestionVO != null){
+                return ResultUtils.success((QuestionVO) cacheQuestionVO);
+            }
+        }
+
+        //不是热key
+
         // 查询数据库
         Question question = questionService.getById(id);
         ThrowUtils.throwIf(question == null, ErrorCode.NOT_FOUND_ERROR);
+
+        JdHotKeyStore.smartSet(key,question);
         // 获取封装类
         return ResultUtils.success(questionService.getQuestionVO(question, request));
     }
