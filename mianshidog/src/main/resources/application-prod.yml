@@ -4,18 +4,20 @@ spring:
   # 数据库配置
   # todo 需替换配置
   datasource:
+    #    driver-class-name: com.mysql.jdbc.Driver
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/my_db
+    url: jdbc:mysql://47.98.109.121:3306/mianshidog
     username: root
     password: 123456
+
   # Redis 配置
   # todo 需替换配置
   redis:
-    database: 1
-    host: localhost
+    database: 0
+    host: 47.98.109.121
     port: 6379
     timeout: 5000
-    password: 123456
+    password: 021223
   # Elasticsearch 配置
   # todo 需替换配置
   elasticsearch:
