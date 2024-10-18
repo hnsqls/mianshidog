@@ -25,5 +25,10 @@ public class QuestionBankQuestionAddRequest implements Serializable {
      */
     private Long questionBankId;
 
+    /**
+     * 题目 id
+     */
+    private Long questionId;
+
     private static final long serialVersionUID = 1L;
 }
